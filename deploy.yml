@@ -17,12 +17,12 @@
 
     - name: Pull latest images
       shell:
-        cmd: "docker-compose pull"
+        cmd: "docker compose pull"
         chdir: "{{ compose_directory }}"
   
     - name: Update active deployment
       shell:
-        cmd: "docker-compose up -d blockexchange_active"
+        cmd: "docker compose up -d blockexchange_active"
         chdir: "{{ compose_directory }}"
   
     - name: Wait for container start
@@ -31,10 +31,10 @@
 
     - name: Update passive deployment
       shell:
-        cmd: "docker-compose up -d blockexchange_passive"
+        cmd: "docker compose up -d blockexchange_passive"
         chdir: "{{ compose_directory }}"
 
     - name: Start auxilliary services
       shell:
-        cmd: "docker-compose up -d --remove-orphans"
+        cmd: "docker compose up -d --remove-orphans"
         chdir: "{{ compose_directory }}"
