@@ -31,6 +31,6 @@ jobs:
     - name: 📧 Discord success notification
       env:
         DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
-      uses: Ilshidur/action-discord@0.3.2
+      uses: Ilshidur/action-discord@0.4.0
       with:
         args: '☑️ Central blockexchange deployment updated'
