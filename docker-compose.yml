@@ -1,8 +1,38 @@
-version: "2"
-
-
 services:
- blockexchange_passive:
+ blockexchange:
+  image: blockexchange/blockexchange
+  restart: always
+  # no container_name / host ports: required for "docker rollout"
+  depends_on:
+   - postgres
+  env_file:
+   - blockexchange.env
+  deploy:
+   replicas: 2
+  healthcheck:
+   test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/healthcheck || exit 1"]
+   interval: 5s
+   timeout: 3s
+   retries: 3
+   start_period: 10s
+  stop_grace_period: 20s
+  networks:
+   - terminator
+   - default
+  labels:
+   - "promtail=true"
+   - "traefik.enable=true"
+   - "traefik.docker.network=terminator"
+   - "traefik.http.routers.blockexchange.rule=Host(`blockexchange.minetest.ch`)"
+   - "traefik.http.services.blockexchange.loadbalancer.server.port=8080"
+   - "traefik.http.routers.blockexchange.entrypoints=websecure"
+   - "traefik.http.routers.blockexchange.tls.certresolver=default"
+  logging:
+   options:
+    max-size: 50m
+
+ # background jobs, not exposed through traefik
+ blockexchange_worker:
   image: blockexchange/blockexchange
   restart: always
   depends_on:
@@ -11,19 +41,6 @@ services:
    - blockexchange.env
   environment:
    - EXECUTE_JOBS=true
-  labels:
-   - "promtail=true"
-  logging:
-   options:
-    max-size: 50m
-
- blockexchange_active:
-  image: blockexchange/blockexchange
-  restart: always
-  depends_on:
-   - postgres
-  env_file:
-   - blockexchange.env
   labels:
    - "promtail=true"
   logging:
@@ -48,29 +65,6 @@ services:
    - "synchronous_commit=off"
    - "-c"
    - "max_connections=250"
-  logging:
-   options:
-    max-size: 50m
-
- haproxy:
-  image: haproxy:3.2.9
-  networks:
-   - terminator
-   - default
-  restart: always
-  depends_on:
-   - blockexchange_passive
-   - blockexchange_active
-  labels:
-    - "promtail=true"
-    - "traefik.enable=true"
-    - "traefik.docker.network=terminator"
-    - "traefik.http.routers.blockexchange.rule=Host(`blockexchange.minetest.ch`)"
-    - "traefik.http.services.blockexchange.loadbalancer.server.port=80"
-    - "traefik.http.routers.blockexchange.entrypoints=websecure"
-    - "traefik.http.routers.blockexchange.tls.certresolver=default"
-  volumes:
-   - "./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"
   logging:
    options:
     max-size: 50m
