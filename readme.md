@@ -5,7 +5,7 @@ minetest blockexchange infrastructure code
 
 # Overview
 
-This repository deploys the `blockexchange_server` application on its `latest` image to https://blockexchange.minetest.ch
+This repository deploys the `blockexchange_server` application on its `latest` image to https://bx.luanti.ch (the old https://blockexchange.minetest.ch url redirects there)
 
 ## Manual deployment
 

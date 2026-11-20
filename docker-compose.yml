@@ -21,18 +21,14 @@ services:
    - terminator
    - default
   labels:
-   - "promtail=true"
    # drain: mark unhealthy so traefik stops routing, wait for it to notice, then docker stops the container (SIGTERM + grace period)
    - "docker-rollout.pre-stop-hook=touch /tmp/draining && sleep 10"
    - "traefik.enable=true"
    - "traefik.docker.network=terminator"
-   - "traefik.http.routers.blockexchange.rule=Host(`blockexchange.minetest.ch`)"
-   - "traefik.http.services.blockexchange.loadbalancer.server.port=8080"
-   - "traefik.http.routers.blockexchange.entrypoints=websecure"
-   - "traefik.http.routers.blockexchange.tls.certresolver=default"
-  logging:
-   options:
-    max-size: 50m
+   - "traefik.http.routers.bx-luanti-ch.rule=Host(`bx.luanti.ch`)"
+   - "traefik.http.services.bx-luanti-ch.loadbalancer.server.port=8080"
+   - "traefik.http.routers.bx-luanti-ch.entrypoints=websecure"
+   - "traefik.http.routers.bx-luanti-ch.tls.certresolver=default"
 
  # background jobs, not exposed through traefik
  blockexchange_worker:
@@ -44,11 +40,23 @@ services:
    - blockexchange.env
   environment:
    - EXECUTE_JOBS=true
+
+ # redirects the old domain to the new one
+ blockexchange-redirect:
+  image: nginx:1.31.9
+  restart: always
+  networks:
+   - terminator
+   - default
   labels:
-   - "promtail=true"
-  logging:
-   options:
-    max-size: 50m
+   - "traefik.enable=true"
+   - "traefik.docker.network=terminator"
+   - "traefik.http.routers.blockexchange-minetest-ch.rule=Host(`blockexchange.minetest.ch`)"
+   - "traefik.http.services.blockexchange-minetest-ch.loadbalancer.server.port=80"
+   - "traefik.http.routers.blockexchange-minetest-ch.entrypoints=websecure"
+   - "traefik.http.routers.blockexchange-minetest-ch.tls.certresolver=default"
+  volumes:
+   - "./redirect.conf:/etc/nginx/conf.d/default.conf:ro"
 
  postgres:
   image: postgres:16.6
@@ -56,8 +64,6 @@ services:
   shm_size: '2gb'
   environment:
    POSTGRES_PASSWORD: enter
-  labels:
-   - "promtail=true"
   volumes:
    - "./data/postgres:/var/lib/postgresql/data"
   command:
@@ -68,9 +74,6 @@ services:
    - "synchronous_commit=off"
    - "-c"
    - "max_connections=250"
-  logging:
-   options:
-    max-size: 50m
 
 networks:
  terminator:
